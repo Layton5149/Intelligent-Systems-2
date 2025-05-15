@@ -1,7 +1,14 @@
 import pandas as pd
-import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
+from flask import Flask, request, jsonify, render_template
+
+#flask setup
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return render_template('index.html')
 
 # Load ratings
 ratings = pd.read_csv(
@@ -10,6 +17,7 @@ ratings = pd.read_csv(
     engine="python",
     names=["UserID", "MovieID", "Rating", "Timestamp"],
 )
+print(ratings.head())
 ratings = ratings.drop(columns=["Timestamp"])
 
 # Load movies
@@ -20,16 +28,19 @@ movies = pd.read_csv(
     encoding="latin1",
     names=["MovieID", "Title", "Genres"]
 )
+print(movies.head())
 
 # Merge ratings with movie info
-df = pd.merge(ratings, movies, on="MovieID")
+Combined_df = pd.merge(ratings, movies, on="MovieID")
+print (Combined_df.head())
 
 # Create movie-user matrix (rows = movies, columns = users)
-ratings_matrix = df.pivot_table(
+ratings_matrix = Combined_df.pivot_table(
     index='MovieID',
     columns='UserID',
     values='Rating'
 )
+print (ratings_matrix.head())
 
 # Replace NaNs with the movie's average rating
 ratings_matrix_filled = ratings_matrix.apply(lambda row: row.fillna(row.mean()), axis=1)
@@ -45,26 +56,37 @@ model_knn.fit(ratings_pca)
 # Map movie IDs to titles for lookup
 movie_id_to_title = movies.set_index('MovieID')['Title'].to_dict()
 
-# --- Example: Recommend movies similar to a given title ---
-input_title = "Mighty Morphin Power Rangers: The Movie (1995)"  # Change this to test other titles
+input_title = "Star Wars: Episode IV - A New Hope (1977)"  # Example input title
 
 # Find MovieID from title
-input_movie = movies[movies['Title'] == input_title]
-if input_movie.empty:
-    print(f"Movie '{input_title}' not found.")
-else:
-    input_id = input_movie['MovieID'].values[0]
+@app.route('/search', methods=['POST'])
+def recommend():
+    print ("Request received")
+    data = request.get_json()
+    input_title = data.get('title') 
 
-    # Find row index in the ratings matrix
-    if input_id not in ratings_matrix_filled.index:
-        print(f"No ratings found for '{input_title}'.")
+    endList = []
+    input_movie = movies[movies['Title'] == input_title]
+    if input_movie.empty:
+        return jsonify({'error': f"Movie '{input_title}' not found."})
     else:
-        movie_idx = ratings_matrix_filled.index.get_loc(input_id)
-        distances, indices = model_knn.kneighbors(
-            ratings_pca[movie_idx].reshape(1, -1), n_neighbors=6
-        )
+        input_id = input_movie['MovieID'].values[0]
 
-        print(f"\nMovies similar to '{input_title}':")
-        for i in range(1, len(indices[0])):  # skip the first (itself)
-            similar_idx = ratings_matrix_filled.index[indices[0][i]]
-            print(f"- {movie_id_to_title[similar_idx]}")
+        # Find row index in the ratings matrix
+        if input_id not in ratings_matrix_filled.index:
+            return jsonify({'error': f"No ratings found for '{input_title}'."})
+        else:
+            movie_idx = ratings_matrix_filled.index.get_loc(input_id)
+            _, indices = model_knn.kneighbors(
+                ratings_pca[movie_idx].reshape(1, -1), n_neighbors=6
+            )
+
+            for i in range(1, 6):  # skip the first (itself)
+                similar_idx = ratings_matrix_filled.index[indices[0][i]]
+                endList.append(movie_id_to_title[similar_idx])
+
+            print (endList)
+            
+            return jsonify({'input': input_title, 'recommendations': endList})
+
+app.run(debug=True)

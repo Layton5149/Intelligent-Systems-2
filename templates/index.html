@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Movie Similarity Finder</title>
+    <link href="{{ url_for('static', filename='css/styles.css') }}" rel="stylesheet">
+    <script defer src="{{ url_for('static', filename='js/script.js')}}" type="module"></script> <!-- Link to JavaScript file -->
+</head>
+<header>
+    <h1 class="text-center display-4 my-4 title-text">Movie Similarity Finder</h1>
+</header>
+<div class="container text-center mb-4" style = "color: white">
+    <p class="lead">Select a movie from the dropdown list and find similar movies you may also like.</p>
+</div>
+<div class="container mb-5">
+    <form id="movie-search-form" autocomplete="off">
+        <div class="mb-3 d-flex align-items-center position-relative">
+            <input type="text" class="form-control form-control-lg flex-grow-1 me-2" id="movie-search-input" placeholder="Type to search for a movie..." style="min-width: 300px;">
+            <button type="submit" id= "search-button" class="btn btn-primary btn-lg" style = "background-color: rgb(197, 0, 197); outline-color: rgb(197, 0, 197) ;">Find Similar Movies</button>
+            <div id="autocomplete-list" class="list-group position-absolute w-100" style="z-index: 1000; top:100%;"></div>
+        </div>
+    </form>
+</div>
+<div class="container text-center" id="results-container" style = "color: white;">
+</div>
+<body>
+</body>
+</html>

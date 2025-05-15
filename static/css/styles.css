@@ -1,0 +1,9 @@
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #272727;   
+}
+
+.title-text {
+    color: rgb(197, 0, 197);
+    font-weight: bold;
+}
